@@ -22,11 +22,11 @@ main () {
 
 
 check_pv () {
-  has_pv=`which pv`
+  has_pv=$(which pv)
   if [[ -z $has_pv ]]; then
     sudo apt update && sudo apt install -y pv
   fi
-  has_pv=`which pv`
+  has_pv=$(which pv)
   if [[ -z $has_pv ]]; then
     echo Sorry, couldn\'t install pv. Try manually installing it and run again.
     exit
@@ -38,7 +38,7 @@ check_pv () {
 pull () {
   cd ~/klipper
   git remote update > /dev/null
-  behind=`git status -uno | grep behind`
+  behind=$(git status -uno | grep behind)
 
   if [[ -z "$behind" ]]; then
     echo "All ready up to date! Exiting..."
@@ -60,7 +60,7 @@ flashy () {
   # Clean up from last go 'round, and copy in the .config file
   cd ~/klipper
   make clean
-  cp $1 ~/klipper/.config
+  cp "$1" ~/klipper/.config
   # build the config
   make -j4 |  pv --line-mode --size 55 --eta --progress > /dev/null
   echo -e "finished building!\nflashing $mcu..."
