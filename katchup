@@ -1,16 +1,18 @@
 #!/bin/bash
 
 main () {
+  # Make sure pv is installed (for progress bars)
+  check_pv 
+
   echo "Let's katchup..."
 
-  check_pv 
   # Call the functions. Pull checks for available updates and exits if there are none...
   pull
 
   sudo service klipper stop
   # Then this for loop updates eckh mcu with a config in the ~/kup directory
   for config in ~/katchup/*.config; do
-    flashy $config
+    flashy "$config"
   done
   sudo service klipper start && sleep 5
 
@@ -24,6 +26,7 @@ main () {
 check_pv () {
   has_pv=$(which pv)
   if [[ -z $has_pv ]]; then
+    echo "Can't find pv... Attempting to install..."
     sudo apt update && sudo apt install -y pv
   fi
   has_pv=$(which pv)
@@ -72,13 +75,13 @@ flashy () {
   fi
   
   # Put canbus bridge devices in flash mode...
-  if [[ -n $usb ]] && [[ -n $can ]]; then 
-	  python3 ~/katapult/scripts/flashtool.py -r -u $can 2> /dev/null
+  if [[ -n "$usb" ]] && [[ -n "$can" ]]; then 
+	  python3 ~/katapult/scripts/flashtool.py -r -u "$can" 2> /dev/null
 	  sleep 5
   fi
   
   # Flash
-  python3 ~/katapult/scripts/flashtool.py $( [[ -n $usb ]] \
+  python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
       && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) 
   sleep 5
 } 
