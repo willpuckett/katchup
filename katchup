@@ -78,7 +78,7 @@ flashy () {
   fi
   
   # Flash
-  python3 ~/katapult/scripts/flashtool.py ( [[ -n $usb ]] \
+  python3 ~/katapult/scripts/flashtool.py $( [[ -n $usb ]] \
       && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) 
   sleep 5
 } 
