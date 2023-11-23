@@ -1,18 +1,33 @@
 #!/bin/bash
 
 main () {
+  pull=true
+  while getopts m:n flag
+  do
+      case "${flag}" in
+          m) mcu=${OPTARG};;
+          n) pull=false;;
+          # ) fullname=${OPTARG};;
+      esac
+  done
   # Make sure pv is installed (for progress bars)
   check_pv 
 
   echo "Let's katchup..."
 
   # Call the functions. Pull checks for available updates and exits if there are none...
-  pull
+    if [[ $pull == true ]]; then
+      echo Pulling!
+      pull  
+  fi
 
   sudo service klipper stop
   # Then this for loop updates eckh mcu with a config in the ~/kup directory
   for config in ~/katchup/*.config; do
-    flashy "$config"
+    if [[ -z $mcu || $config =~ $mcu ]]; then
+      echo $config
+      flashy "$config"
+    fi
   done
   sudo service klipper start && sleep 5
 
