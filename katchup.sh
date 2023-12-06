@@ -5,7 +5,7 @@ main () {
   while getopts m:n flag
   do
       case "${flag}" in
-          m) mcu=${OPTARG};;
+          m) target_mcu=${OPTARG};;
           n) pull=false;;
           # ) fullname=${OPTARG};;
       esac
@@ -23,8 +23,9 @@ main () {
 
   sudo service klipper stop
   # Then this for loop updates eckh mcu with a config in the ~/kup directory
-  for config in ~/katchup/*.config; do
-    if [[ -z $mcu || $config =~ $mcu ]]; then
+  for config in ~/printer_data/config/katchup/*.config; do
+    echo config $config target_mcu $target_mcu mcu $mcu
+    if [[ -z $mcu || $config =~ $target_mcu ]]; then
       echo $config
       flashy "$config"
     fi
@@ -91,12 +92,12 @@ flashy () {
   
   # Put canbus bridge devices in flash mode...
   if [[ -n "$usb" ]] && [[ -n "$can" ]]; then 
-	  python3 ~/katapult/scripts/flashtool.py -r -u "$can" 2> /dev/null
+	  ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py -r -u "$can" 2> /dev/null
 	  sleep 5
   fi
   
   # Flash
-  python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
+  ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
       && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) 
   sleep 5
 } 
