@@ -1,6 +1,6 @@
 # Katchup
  
-![katchup](https://cdn.emojidex.com/emoji/hdpi/ketchup.png?1453371291) Katchup is a small script to simplify updating klipper firmware. It's a very simple script and should hopefully be able to build and flash [katapult](https://github.com/arksine/katapult) as well soon.
+![katchup](https://cdn.emojidex.com/emoji/hdpi/ketchup.png) Katchup is a small script to simplify updating klipper firmware. It's a very simple script and should hopefully be able to build and flash [katapult](https://github.com/arksine/katapult) as well soon.
 
 
 It looks for `.config` files in its directory, then builds Klipper and flashes the appropriate mcu.
