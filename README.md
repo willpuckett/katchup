@@ -17,4 +17,6 @@ Run `~/katchup/katchup.sh`. Katchup checks to see if there are any changes to th
 
 In preparation for adding katapult updates, `katchup.sh` now requires either `-a` ("application") or `-b` ("bootloader"). 
 
+`ketchup.sh` can also flash a single mcu via the `-m {mcu}` flag. 
+
 I never knew there wasn't a standard katchup emoji until now.
