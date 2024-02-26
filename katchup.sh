@@ -2,7 +2,7 @@
 
 main () {
   # Make sure pv is installed (for progress bars)
-  check_pv 
+  check_reqs
 
   echo "Katching up $fab..."
 
@@ -15,29 +15,41 @@ main () {
   sudo service klipper stop
   # Then this for loop updates each mcu with a config in the ~/printer_data/config/katchup/$fab directory
   for config in ~/printer_data/config/katchup/$fab/*.config; do
-    echo config $config target_mcu $target_mcu 
-    if [[ -z $target_mcu || $config =~ $target_mcu ]]; then
-      echo $config
+    export filename="${config##*/}"
+    # echo $filename
+    if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
+      echo flashing config $filename
       flashy "$config"
     fi
   done
   sudo service klipper start && sleep 5
 
-  # # And finally a firmware restart because why not
+  # # Uncomment to throw in a firmware restart
   # echo 🦒 Executing Firmware Restart...
   # echo FIRMWARE_RESTART > ~/printer_data/comms/klippy.serial 
-  echo "✅ You're all up to date. "
+
+  echo "✅ You're all up to date."
 }
 
-check_pv () {
+check_reqs () {
   has_pv=$(which pv)
+  has_expect=$(which expect)
   if [[ -z $has_pv ]]; then
     echo "Can't find pv... Attempting to install..."
     sudo apt update && sudo apt install -y pv
   fi
+  if [[ -z $has_expect ]]; then
+    echo "Can't find expect... Attempting to install..."
+    sudo apt update && sudo apt install -y expect
+  fi
   has_pv=$(which pv)
   if [[ -z $has_pv ]]; then
     echo Sorry, couldn\'t install pv. Try manually installing it and run again.
+    exit
+  fi
+  has_expect=$(which expect)
+  if [[ -z $has_expect ]]; then
+    echo Sorry, couldn\'t install expect. Try manually installing it and run again.
     exit
   fi
 }
@@ -60,9 +72,7 @@ pull () {
 # for usb only devices, omit canID but use double --
 # ie ~/printer_data/config/katchup/$fab/mcu--usbID.config
 flashy () {
-  flashtool="~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py"
-  config="${1##*/}"
-  IFS=- read mcu can usb <<< "${config%.config}"
+  IFS=- read mcu can usb <<< "${filename%.config}"
 
   echo -e "\nBuilding for $mcu..."
   
@@ -73,13 +83,15 @@ flashy () {
 
   # Call make menuconfig to update the .config file
   expect -c '
-  set timeout -1
+  global spawn_out
+  # set timeout -1
   spawn make menuconfig
-  match_max 100000
+  # match_max 100000
   send -- "q"
-  expect "Quit"
+  # expect "Quit"
   send -- "y"
   ' 
+  # clear
   cp ~/$fab/.config "$1"
 
   # build the config
@@ -94,12 +106,12 @@ flashy () {
   
   # Put canbus bridge devices in flash mode...
   if [[ -n "$usb" ]] && [[ -n "$can" ]]; then 
-	  $flashtool -r -u "$can" 2> /dev/null
+	  ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py -r -u "$can" 2> /dev/null
 	  sleep 5
   fi
   
   # Flash
-  $flashtool $( [[ -n "$usb" ]] \
+  ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
       && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) 
   sleep 5
 } 
@@ -123,4 +135,3 @@ if [[ -z $fab ]]; then
 fi
 
 main; exit
-# echo $fab
