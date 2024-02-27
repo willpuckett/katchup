@@ -30,14 +30,15 @@ pull=true
   sudo service klipper stop
   # Then this for loop updates each mcu with a config in the ~/printer_data/config/katchup/$fab directory
   for config in ~/printer_data/config/katchup/$fab/*.config; do
-    export filename="${config##*/}"
+    filename="${config##*/}"
     # echo $filename
     if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
       echo flashing config $filename
       flashy "$config"
     fi
   done
-  sudo service klipper start && sleep 5
+  sudo service klipper start 
+  # sleep 5
 
   # # Uncomment to throw in a firmware restart
   # echo 🦒 Executing Firmware Restart...
@@ -98,12 +99,12 @@ pull () {
 flashy () {
   IFS=- read mcu can usb <<< "${filename%.config}"
 
-  echo -e "\nBuilding for $mcu..."
-  
   # Clean up from last go 'round, and copy in the .config file
   cd ~/$fab
   make clean
   cp "$config" ~/$fab/.config
+
+  echo -e "\nBuilding for $mcu..."
 
   # Call make menuconfig to update the .config file
   expect -c '
