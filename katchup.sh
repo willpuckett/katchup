@@ -30,9 +30,10 @@ pull=true
   sudo service klipper stop
   # Then this for loop updates each mcu with a config in the ~/printer_data/config/katchup/$fab directory
   for config in ~/printer_data/config/katchup/$fab/*.config; do
-    filename="${config##*/}"
+    export filename="${config##*/}"
     # echo $filename
     if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
+      export kconfig="KCONFIG_CONFIG=$config"
       echo flashing config $filename
       flashy "$config"
     fi
@@ -101,23 +102,22 @@ flashy () {
 
   # Clean up from last go 'round, and copy in the .config file
   cd ~/$fab
-  make clean
-  cp "$config" ~/$fab/.config
-
-  echo -e "\nBuilding for $mcu..."
+  make clean $kconfig
+  # cp "$config" ~/$fab/.config
 
   # Call make menuconfig to update the .config file
   expect -c '
   global spawn_out
-  spawn make menuconfig
+  spawn make menuconfig $::env(kconfig)
   send -- "q"
   send -- "y"
   ' 
   # Copy the updated .config back to printer_data
-  cp ~/$fab/.config "$config"
+  # cp ~/$fab/.config "$config"
 
   # build the config
-  make -j4 |  pv --line-mode --size 55 --eta --progress > /dev/null
+  cores=`grep -c ^processor /proc/cpuinfo`
+  make -j $cores $kconfig |  pv --line-mode --size 55 --eta --progress > /dev/null
   echo -e "finished building!\nflashing $mcu..."
 
   # First check to see if it's a host process, and if it is, flash it
@@ -136,7 +136,7 @@ flashy () {
   ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
       && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) \
       $( [[ "$fab" == katapult ]] && echo "-f out/deployer.bin")
-  sleep 5
+  sleep 1
 } 
 
 # Call main with all of the arguments
