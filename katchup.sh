@@ -3,10 +3,12 @@
 main () {
 fab=klipper
 pull=true
-  while getopts :bhm:n flag
+edit=false
+  while getopts :behm:n flag
     do
         case "${flag}" in
             b) fab=katapult;;
+            e) edit=true;;
             h) help && exit;;
             m) target_mcu=${OPTARG};;
             n) pull=false;;
@@ -50,6 +52,7 @@ help () {
   echo "Usage: katchup.sh [options]"
   echo "Options:"
   echo "  -b  Flash katapult instead of klipper (bootloader)"
+  echo "  -e  Edit the .config file"
   echo "  -h  Display this help message"
   echo "  -m  Specify a target mcu to flash, requires an argument"
   echo "  -n  Skip the pull step (no pull)"
@@ -58,22 +61,14 @@ help () {
 check_reqs () {
   has_pv=$(which pv)
   has_expect=$(which expect)
-  if [[ -z $has_pv ]]; then
-    echo "Can't find pv... Attempting to install..."
-    sudo apt update && sudo apt install -y pv
-  fi
-  if [[ -z $has_expect ]]; then
-    echo "Can't find expect... Attempting to install..."
-    sudo apt update && sudo apt install -y expect
+  if [[ -z $has_pv || -z $has_expect ]]; then
+    echo "Missing dependencies... Attempting to install..."
+    sudo apt update && sudo apt install -y pv expect
   fi
   has_pv=$(which pv)
-  if [[ -z $has_pv ]]; then
-    echo Sorry, couldn\'t install pv. Try manually installing it and run again.
-    exit
-  fi
   has_expect=$(which expect)
-  if [[ -z $has_expect ]]; then
-    echo Sorry, couldn\'t install expect. Try manually installing it and run again.
+  if [[ -z $has_pv || -z $has_expect ]]; then
+    echo "Sorry, couldn't find dependencies. Try manually installing pv and expect, make sure they're in your \$PATH, and run again."
     exit
   fi
 }
@@ -100,13 +95,18 @@ flashy () {
   cd ~/$fab
   make clean $kconfig
 
-  # Call make menuconfig to update the .config file
-  expect -c '
-  global spawn_out
-  spawn make menuconfig $::env(kconfig)
-  send -- "q"
-  send -- "y"
-  ' 
+  # Call make menuconfig to update the .config file.
+  # Ensures it's built properly when new options are added
+  if [[ $edit == true ]]; then
+    make menuconfig $kconfig
+  else
+    expect -c '
+    global spawn_out
+    spawn make menuconfig $::env(kconfig)
+    send -- "q"
+    send -- "y"
+    ' 
+  fi
 
   # build the config
   cores=$(grep -c ^processor /proc/cpuinfo)
