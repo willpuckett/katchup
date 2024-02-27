@@ -39,7 +39,9 @@ pull=false
     echo -e "Searching can0...\nDo any of these look useful?"
     ~/klippy-env/bin/python3 ~/katapult/scripts/flash_can.py -q
     read -p "Enter mcu can uuid (leave blank for serial only devices): " mcucanuuid
-    echo -e "Listing serial devices..."
+    echo -e "Thanks. If you supplied a uuid, I'll try and \nput it in bootloader mode now in case you're using it as a bridge...\nListing serial devices..."
+    [[ -n $mcucanuuid ]] && ~/klippy-env/bin/python3 ~/katapult/scripts/flash_can.py -r -u $mcucanuuid
+    sleep 5
     ls /dev/serial/by-id/
     read -p "Enter by-id serial name (leave blank for can only devices): " mcubyid
     echo -e "Thanks buckets. Continuing to edit..."
