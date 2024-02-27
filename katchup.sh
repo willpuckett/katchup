@@ -30,16 +30,14 @@ pull=true
   sudo service klipper stop
   # Then this for loop updates each mcu with a config in the ~/printer_data/config/katchup/$fab directory
   for config in ~/printer_data/config/katchup/$fab/*.config; do
-    export filename="${config##*/}"
-    # echo $filename
-    if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
+    filename="${config##*/}"
+    if [[ -z $target_mcu || $filename =~ ^$target_mcu ]]; then
       export kconfig="KCONFIG_CONFIG=$config"
       echo flashing config $filename
       flashy "$config"
     fi
   done
-  sudo service klipper start 
-  # sleep 5
+  sudo service klipper start
 
   # # Uncomment to throw in a firmware restart
   # echo 🦒 Executing Firmware Restart...
@@ -99,11 +97,8 @@ pull () {
 # ie ~/printer_data/config/katchup/$fab/mcu--usbID.config
 flashy () {
   IFS=- read mcu can usb <<< "${filename%.config}"
-
-  # Clean up from last go 'round, and copy in the .config file
   cd ~/$fab
   make clean $kconfig
-  # cp "$config" ~/$fab/.config
 
   # Call make menuconfig to update the .config file
   expect -c '
@@ -112,17 +107,15 @@ flashy () {
   send -- "q"
   send -- "y"
   ' 
-  # Copy the updated .config back to printer_data
-  # cp ~/$fab/.config "$config"
 
   # build the config
-  cores=`grep -c ^processor /proc/cpuinfo`
+  cores=$(grep -c ^processor /proc/cpuinfo)
   make -j $cores $kconfig |  pv --line-mode --size 55 --eta --progress > /dev/null
   echo -e "finished building!\nflashing $mcu..."
 
   # First check to see if it's a host process, and if it is, flash it
   if [[ $mcu == host ]]; then
-    make flash
+    make flash $kconfig
     return
   fi
   
