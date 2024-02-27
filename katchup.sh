@@ -1,6 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 main () {
+fab=klipper
+pull=true
+  while getopts :bhm:n flag
+    do
+        case "${flag}" in
+            b) fab=katapult;;
+            h) help;;
+            m) target_mcu=${OPTARG};;
+            n) pull=false;;
+            :) echo "Option '$OPTARG' missing a required argument." && exit 1;;
+            \?) echo "Invalid option $OPTARG" && exit 1;;
+        esac
+    done
+
+
   # Make sure pv is installed (for progress bars)
   check_reqs
 
@@ -17,7 +32,7 @@ main () {
   for config in ~/printer_data/config/katchup/$fab/*.config; do
     export filename="${config##*/}"
     # echo $filename
-    if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
+    if [[ -z $target_mcu || $filename =~ ^$target_mcu ]]; then
       echo flashing config $filename
       flashy "$config"
     fi
@@ -29,6 +44,16 @@ main () {
   # echo FIRMWARE_RESTART > ~/printer_data/comms/klippy.serial 
 
   echo "✅ You're all up to date."
+}
+
+help () {
+  echo "Usage: katchup.sh [options]"
+  echo "Options:"
+  echo "  -b  Flash katapult instead of klipper"
+  echo "  -h  Display this help message"
+  echo "  -m  Specify a target mcu to flash, requires an argument"
+  echo "  -n  Skip the pull step (no pull)"
+  exit
 }
 
 check_reqs () {
@@ -79,20 +104,17 @@ flashy () {
   # Clean up from last go 'round, and copy in the .config file
   cd ~/$fab
   make clean
-  cp "$1" ~/$fab/.config
+  cp "$config" ~/$fab/.config
 
   # Call make menuconfig to update the .config file
   expect -c '
   global spawn_out
-  # set timeout -1
   spawn make menuconfig
-  # match_max 100000
   send -- "q"
-  # expect "Quit"
   send -- "y"
   ' 
-  # clear
-  cp ~/$fab/.config "$1"
+  # Copy the updated .config back to printer_data
+  cp ~/$fab/.config "$config"
 
   # build the config
   make -j4 |  pv --line-mode --size 55 --eta --progress > /dev/null
@@ -112,26 +134,10 @@ flashy () {
   
   # Flash
   ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
-      && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) 
+      && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) \
+      $( [[ "$fab" == katapult ]] && echo "-f out/deployer.bin")
   sleep 5
 } 
 
-export pull=true
-while getopts bam:n flag
-  do
-      case "${flag}" in
-          b) export fab=katapult;;
-          a) export fab=klipper;;
-          m) export target_mcu=${OPTARG};;
-          n) pull=false;;
-          # ) fullname=${OPTARG};;
-      esac
-  done
-
-
-if [[ -z $fab ]]; then
-  echo -e "Please specify a firmware to katchup. \nie: katchup.sh -b for katapult (bootloader) \nor katchup.sh -a for klipper (application)"
-  exit
-fi
-
-main; exit
+# Call main with all of the arguments
+main "$@"; exit
