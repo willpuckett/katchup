@@ -1,6 +1,6 @@
 # 🍅[^1] Katchup
  
-Katchup is a small script to simplify updating katapult bootloader and klipper firmware. It's a very simple script. It looks for `.config` files in the `~/printer_data/config/katchup/klipper||katapult` directory, then builds Klipper (or Katapult) and flashes the appropriate mcu.
+Katchup is a small script to simplify updating [katapult](https://github.com/arksine/katapult) bootloader and [klipper](https://github.com/klipper3d/klipper) firmware. It's a very simple script. It looks for `.config` files in the `~/printer_data/config/katchup/klipper||katapult` directory, then builds Klipper (or Katapult) and flashes the appropriate mcu.
 
 ## Usage
 
@@ -8,7 +8,7 @@ Katchup is a small script to simplify updating katapult bootloader and klipper f
 ❯ ./katchup.sh -h
 Usage: katchup.sh [options]
 Options:
-  -b  Flash katapult instead of klipper
+  -b  Flash katapult instead of klipper (bootloader)
   -h  Display this help message
   -m  Specify a target mcu to flash, requires an argument
   -n  Skip the pull step (no pull)
@@ -31,7 +31,6 @@ The canID or usbID field may be omitted, just not both! If flashing a `host proc
 ## Flashing Katapult
 
 Katchup may be configured for katapult by substituting `katapult` for `klipper` in the above steps. Katapult `.config`s **MUST** be configured to bulid the deployer (I think). Invoke `katchup.sh` with the `-b` option to flash katapult.
-
 
 
 [^1]: I never knew there wasn't a standard katchup emoji until now.

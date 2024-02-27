@@ -7,11 +7,11 @@ pull=true
     do
         case "${flag}" in
             b) fab=katapult;;
-            h) help;;
+            h) help && exit;;
             m) target_mcu=${OPTARG};;
             n) pull=false;;
-            :) echo "Option '$OPTARG' missing a required argument." && exit 1;;
-            \?) echo "Invalid option $OPTARG" && exit 1;;
+            :) echo "Option '$OPTARG' missing a required argument." && help && exit 1;;
+            \?) echo -e "\nInvalid option $OPTARG\n" && help && exit 1;;
         esac
     done
 
@@ -49,11 +49,10 @@ pull=true
 help () {
   echo "Usage: katchup.sh [options]"
   echo "Options:"
-  echo "  -b  Flash katapult instead of klipper"
+  echo "  -b  Flash katapult instead of klipper (bootloader)"
   echo "  -h  Display this help message"
   echo "  -m  Specify a target mcu to flash, requires an argument"
   echo "  -n  Skip the pull step (no pull)"
-  exit
 }
 
 check_reqs () {
