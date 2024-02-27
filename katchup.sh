@@ -32,7 +32,7 @@ pull=true
   for config in ~/printer_data/config/katchup/$fab/*.config; do
     export filename="${config##*/}"
     # echo $filename
-    if [[ -z $target_mcu || $filename =~ ^$target_mcu ]]; then
+    if [[ -z $target_mcu || $filename =~ ^$target_mcu- ]]; then
       echo flashing config $filename
       flashy "$config"
     fi
