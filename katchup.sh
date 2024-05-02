@@ -2,17 +2,21 @@
 
 main () {
 fab=klipper
+printer=printer
+iface=can0
 add=false
 edit=false
 flash=true
 pull=false
-  while getopts :abehm:np flag
+  while getopts :abd:ehi:m:np flag
     do
         case "${flag}" in
             a) add=true;;
             b) fab=katapult;;
+            d) printer=${OPTARG};;
             e) edit=true;;
             h) help && exit;;
+            i) iface=${OPTARG};;
             m) target_mcu=${OPTARG};;
             n) flash=false;;
             p) pull=true;;
@@ -40,12 +44,12 @@ pull=false
     ~/klippy-env/bin/python3 ~/katapult/scripts/flash_can.py -q
     read -p "Enter mcu can uuid (leave blank for serial only devices): " mcucanuuid
     echo -e "Thanks. If you supplied a uuid, I'll try and \nput it in bootloader mode now in case you're using it as a bridge...\nListing serial devices..."
-    [[ -n $mcucanuuid ]] && ~/klippy-env/bin/python3 ~/katapult/scripts/flash_can.py -r -u $mcucanuuid
+    [[ -n $mcucanuuid ]] && ~/klippy-env/bin/python3 ~/katapult/scripts/flash_can.py -r -i ${iface} -u $mcucanuuid
     sleep 5
     ls /dev/serial/by-id/
     read -p "Enter by-id serial name (leave blank for can only devices): " mcubyid
     echo -e "Thanks buckets. Continuing to edit..."
-    touch ~/printer_data/config/katchup/$fab/$mcuname-$mcucanuuid$( [[ -n $mcubyid ]] && echo -)$mcubyid.config
+    touch ~/${printer}_data/config/katchup/$fab/$mcuname-$mcucanuuid$( [[ -n $mcubyid ]] && echo -)$mcubyid.config
 
     edit=true
     target_mcu=$mcuname
@@ -54,8 +58,8 @@ pull=false
   if [[ $flash == true ]]; then
     sudo service klipper stop
   fi
-  # Then this for loop updates each mcu with a config in the ~/printer_data/config/katchup/$fab directory
-  for config in ~/printer_data/config/katchup/$fab/*.config; do
+  # Then this for loop updates each mcu with a config in the ~/${printer}_data/config/katchup/$fab directory
+  for config in ~/${printer}_data/config/katchup/$fab/*.config; do
     filename="${config##*/}"
     if [[ -z $target_mcu || $filename =~ ^$target_mcu ]]; then
       export kconfig="KCONFIG_CONFIG=$config"
@@ -68,7 +72,7 @@ pull=false
   fi
   # # Uncomment to throw in a firmware restart
   # echo 🦒 Executing Firmware Restart...
-  # echo FIRMWARE_RESTART > ~/printer_data/comms/klippy.serial 
+  # echo FIRMWARE_RESTART > ~/${printer}_data/comms/klippy.serial 
 
   echo "✅ You're all up to date."
 }
@@ -78,8 +82,10 @@ help () {
   echo "Options:"
   echo "  -a  Add a new mcu (call with -b to add Katapult config)"
   echo "  -b  Flash Katapult instead of klipper (bootloader)"
+  echo "  -d  Specify printer name (only for multiple instances)"
   echo "  -e  Edit the .config file"
   echo "  -h  Display this help message"
+  echo "  -i  Set can interface (defaults to can0)"
   echo "  -m  Specify a target mcu to flash, requires an argument"
   echo "  -n  No flash (useful when you only want to create/edit)"
   echo "  -p  Pull. Only flashes if there have been upstream changes"
@@ -114,9 +120,9 @@ pull () {
   fi
 }
 
-# flashy ~/printer_data/config/katchup/$fab/mcu-canID-usbID.config
+# flashy ~/${printer}_data/config/katchup/$fab/mcu-canID-usbID.config
 # for usb only devices, omit canID but use double --
-# ie ~/printer_data/config/katchup/$fab/mcu--usbID.config
+# ie ~/${printer}_data/config/katchup/$fab/mcu--usbID.config
 flashy () {
   IFS=- read mcu can usb <<< "${filename%.config}"
   cd ~/$fab
@@ -151,13 +157,13 @@ flashy () {
     
     # Put canbus bridge devices in flash mode...
     if [[ -n "$usb" ]] && [[ -n "$can" ]]; then 
-      ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py -r -u "$can" 2> /dev/null
+      ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py -r -i ${iface} -u "$can" 2> /dev/null
       sleep 5
     fi
     
     # Flash
     ~/klippy-env/bin/python3 ~/katapult/scripts/flashtool.py $( [[ -n "$usb" ]] \
-        && echo "-d /dev/serial/by-id/$usb" || echo "-u $can" ) \
+        && echo "-d /dev/serial/by-id/$usb" || echo "-i ${iface} -u $can" ) \
         $( [[ "$fab" == katapult ]] && echo "-f out/deployer.bin")
     sleep 1
   fi
