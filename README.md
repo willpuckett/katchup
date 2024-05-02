@@ -10,11 +10,14 @@ Usage: katchup.sh [options]
 Options:
   -a  (Add) Add a new mcu (call with -b to add Katapult config)
   -b  (Bootloader) Katapult mode. Flash/add/edit Katapult instead of Klipper
+  -d  (Device) Specify printer name in the form x of "x_data". For multiple instances
   -e  (Edit) Edit the .config file
   -h  (Help) Display this help message
+  -i  (Interface) Set can interface. Defaults to can0, or can${device} if -d if present
   -m  (MCU) Specify a target mcu to flash, requires an argument
   -n  (No flash) Useful when you only want to create/edit
   -p  (Pull) Only flashes if there have been upstream changes
+
 ```
 
 Run `~/katchup/katchup.sh` to flash all configured mcus with the version of Klipper at `~/klipper`. Katchup can check for upstream changes as well. Run `katchup -p` to pull from upstream and only flash if there are new commits relative to your working version.

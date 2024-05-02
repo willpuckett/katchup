@@ -13,7 +13,7 @@ pull=false
         case "${flag}" in
             a) add=true;;
             b) fab=katapult;;
-            d) printer=${OPTARG};;
+            d) printer=${OPTARG} && iface="can${OPTARG}";;
             e) edit=true;;
             h) help && exit;;
             i) iface=${OPTARG};;
@@ -56,7 +56,7 @@ pull=false
   fi
 
   if [[ $flash == true ]]; then
-    sudo service klipper stop
+    sudo service $( [[ "$printer" == "printer" ]] && echo klipper || echo "klipper-${printer}") stop
   fi
   # Then this for loop updates each mcu with a config in the ~/${printer}_data/config/katchup/$fab directory
   for config in ~/${printer}_data/config/katchup/$fab/*.config; do
@@ -68,7 +68,7 @@ pull=false
   done
 
   if [[ $flash == true ]]; then
-    sudo service klipper start
+    sudo service $( [[ "$printer" == "printer" ]] && echo klipper || echo "klipper-${printer}") start
   fi
   # # Uncomment to throw in a firmware restart
   # echo 🦒 Executing Firmware Restart...
@@ -82,10 +82,10 @@ help () {
   echo "Options:"
   echo "  -a  Add a new mcu (call with -b to add Katapult config)"
   echo "  -b  Flash Katapult instead of klipper (bootloader)"
-  echo "  -d  Specify printer name (only for multiple instances)"
+  echo "  -d  Device (Specify printer name in the form x of "x_data". For multiple instances)"
   echo "  -e  Edit the .config file"
   echo "  -h  Display this help message"
-  echo "  -i  Set can interface (defaults to can0)"
+  echo "  -i  Set can interface (defaults to can0, or can${device} if -d if present)"
   echo "  -m  Specify a target mcu to flash, requires an argument"
   echo "  -n  No flash (useful when you only want to create/edit)"
   echo "  -p  Pull. Only flashes if there have been upstream changes"
